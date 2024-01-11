@@ -63,10 +63,10 @@ def layer_sizes(X, Y):
     return (n_x, n_h, n_y)
 
 #%%
-t_X, t_Y = layer_sizes_test_case()
+t_X, t_Y = testCases_v2.layer_sizes_test_case()
 (n_x, n_h, n_y) = layer_sizes(t_X, t_Y)
 
-layer_sizes_test(layer_sizes)
+public_tests.layer_sizes_test(layer_sizes)
 #%%
 def initialize_parameters(n_x, n_h, n_y):
     """
@@ -186,35 +186,20 @@ def backward_propagation(parameters, cache, X, Y):
     m = X.shape[1]
     
     # First, retrieve W1 and W2 from the dictionary "parameters".
-    #(≈ 2 lines of code)
-    # W1 = ...
-    # W2 = ...
-    # YOUR CODE STARTS HERE
-    
-    
-    # YOUR CODE ENDS HERE
+    W1 = parameters.get("W1")
+    W2 = parameters.get("W2")
         
     # Retrieve also A1 and A2 from dictionary "cache".
-    #(≈ 2 lines of code)
-    # A1 = ...
-    # A2 = ...
-    # YOUR CODE STARTS HERE
-    
-    
-    # YOUR CODE ENDS HERE
+    A1 = cache.get("A1")
+    A2 = cache.get("A2")
     
     # Backward propagation: calculate dW1, db1, dW2, db2. 
-    #(≈ 6 lines of code, corresponding to 6 equations on slide above)
-    # dZ2 = ...
-    # dW2 = ...
-    # db2 = ...
-    # dZ1 = ...
-    # dW1 = ...
-    # db1 = ...
-    # YOUR CODE STARTS HERE
-    
-    
-    # YOUR CODE ENDS HERE
+    dZ2 = A2 - Y
+    dW2 = 1/m*np.matmul(dZ2, A1.T)
+    db2 = 1/m*np.sum(dZ2, axis=1, keepdims=True)
+    dZ1 = np.multiply(np.matmul(W2.T, dZ2), 1-np.power(A1, 2))
+    dW1 = 1/m*np.matmul(dZ1, X.T)
+    db1 = 1/m*np.sum(dZ1, axis=1, keepdims=True)
     
     grads = {"dW1": dW1,
              "db1": db1,
@@ -222,6 +207,197 @@ def backward_propagation(parameters, cache, X, Y):
              "db2": db2}
     
     return grads
+#%%
+parameters, cache, t_X, t_Y = testCases_v2.backward_propagation_test_case()
+
+grads = backward_propagation(parameters, cache, t_X, t_Y)
+
+public_tests.backward_propagation_test(backward_propagation)
+
+#%%
+def update_parameters(parameters, grads, learning_rate = 1.2):
+    """
+    Updates parameters using the gradient descent update rule given above
+    
+    Arguments:
+    parameters -- python dictionary containing your parameters 
+    grads -- python dictionary containing your gradients 
+    
+    Returns:
+    parameters -- python dictionary containing your updated parameters 
+    """
+    # Retrieve a copy of each parameter from the dictionary "parameters". Use copy.deepcopy(...) for W1 and W2
+    W1 = copy.deepcopy(parameters.get("W1"))
+    b1 = parameters.get("b1")
+    W2 = copy.deepcopy(parameters.get("W2"))
+    b2 = parameters.get("b2")
+    
+    # Retrieve each gradient from the dictionary "grads"
+    dW1 = grads.get("dW1")
+    db1 = grads.get("db1")
+    dW2 = grads.get("dW2")
+    db2 = grads.get("db2")
+    
+    # Update rule for each parameter
+    W1 = W1-learning_rate*dW1
+    b1 = b1 - learning_rate*db1
+    W2 = W2-learning_rate*dW2
+    b2 = b2 - learning_rate*db2
+    
+    parameters = {"W1": W1,
+                  "b1": b1,
+                  "W2": W2,
+                  "b2": b2}
+    
+    return parameters
+#%%
+parameters, grads = testCases_v2.update_parameters_test_case()
+parameters = update_parameters(parameters, grads)
+
+public_tests.update_parameters_test(update_parameters)
+
+#%%
+def nn_model(X, Y, n_h, num_iterations = 10000, print_cost=False):
+    """
+    Arguments:
+    X -- dataset of shape (2, number of examples)
+    Y -- labels of shape (1, number of examples)
+    n_h -- size of the hidden layer
+    num_iterations -- Number of iterations in gradient descent loop
+    print_cost -- if True, print the cost every 1000 iterations
+    
+    Returns:
+    parameters -- parameters learnt by the model. They can then be used to predict.
+    """
+    
+    np.random.seed(3)
+    n_x = layer_sizes(X, Y)[0]
+    n_y = layer_sizes(X, Y)[2]
+    
+    # Initialize parameters
+    parameters = initialize_parameters(n_x, n_h, n_y)
+    
+    # Loop (gradient descent)
+
+    for i in range(0, num_iterations):
+         
+        # Forward propagation. Inputs: "X, parameters". Outputs: "A2, cache".
+        A2, cache = forward_propagation(X, parameters)
+        
+        # Cost function. Inputs: "A2, Y". Outputs: "cost".
+        cost = compute_cost(A2, Y)
+ 
+        # Backpropagation. Inputs: "parameters, cache, X, Y". Outputs: "grads".
+        grads = backward_propagation(parameters, cache, X, Y)
+ 
+        # Gradient descent parameter update. Inputs: "parameters, grads". Outputs: "parameters".
+        parameters = update_parameters(parameters, grads)
+        
+        # Print the cost every 1000 iterations
+        if print_cost and i % 1000 == 0:
+            print ("Cost after iteration %i: %f" %(i, cost))
+
+    return parameters
+
+#%%
+public_tests.nn_model_test(nn_model)
+#%%
+def predict(parameters, X):
+    """
+    Using the learned parameters, predicts a class for each example in X
+    
+    Arguments:
+    parameters -- python dictionary containing your parameters 
+    X -- input data of size (n_x, m)
+    
+    Returns
+    predictions -- vector of predictions of our model (red: 0 / blue: 1)
+    """
+    
+    # Computes probabilities using forward propagation, and classifies to 0/1 using 0.5 as the threshold.
+    A2, cache = forward_propagation(X, parameters)
+    predictions = np.where(A2 > 0.5, 1, 0)
+    
+    return predictions
+#%%
+parameters, t_X = testCases_v2.predict_test_case()
+
+predictions = predict(parameters, t_X)
+print("Predictions: " + str(predictions))
+
+public_tests.predict_test(predict)
+#%%
+# Build a model with a n_h-dimensional hidden layer
+parameters = nn_model(X, Y, n_h = 4, num_iterations = 10000, print_cost=True)
+
+# Plot the decision boundary
+plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+plt.title("Decision Boundary for hidden layer size " + str(4))
+#%%
+predictions = predict(parameters, X)
+print ('Accuracy: %d' % float((np.dot(Y, predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size) * 100) + '%')
+#%%
+# This may take about 2 minutes to run
+
+plt.figure(figsize=(16, 32))
+# hidden_layer_sizes = [1, 2, 3, 4, 5]
+
+# you can try with different hidden layer sizes
+# but make sure before you submit the assignment it is set as "hidden_layer_sizes = [1, 2, 3, 4, 5]"
+hidden_layer_sizes = [1, 2, 3, 4, 5, 20, 50, 200]
+
+for i, n_h in enumerate(hidden_layer_sizes):
+    plt.subplot(5, 2, i+1)
+    plt.title('Hidden Layer of size %d' % n_h)
+    parameters = nn_model(X, Y, n_h, num_iterations = 5000)
+    plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+    predictions = predict(parameters, X)
+    accuracy = float((np.dot(Y,predictions.T) + np.dot(1 - Y, 1 - predictions.T)) / float(Y.size)*100)
+    print ("Accuracy for {} hidden units: {} %".format(n_h, accuracy))
+#%%
+# Datasets
+noisy_circles, noisy_moons, blobs, gaussian_quantiles, no_structure = load_extra_datasets()
+
+datasets = {"noisy_circles": noisy_circles,
+            "noisy_moons": noisy_moons,
+            "blobs": blobs,
+            "gaussian_quantiles": gaussian_quantiles}
+
+### START CODE HERE ### (choose your dataset)
+dataset = "noisy_moons"
+### END CODE HERE ###
+
+X, Y = datasets[dataset]
+X, Y = X.T, Y.reshape(1, Y.shape[0])
+
+# make blobs binary
+if dataset == "blobs":
+    Y = Y%2
+
+# Visualize the data
+plt.scatter(X[0, :], X[1, :], c=Y, s=40, cmap=plt.cm.Spectral);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
