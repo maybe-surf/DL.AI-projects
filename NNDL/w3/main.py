@@ -7,7 +7,7 @@ Created on Mon Jan  1 19:05:26 2024
 
 #%%Set up
 import sys
-work_path = "C:/Users/serge/codez/24/NNDL/w3"
+work_path = ""
 sys.path.append(work_path)
 #%%
 # Package imports

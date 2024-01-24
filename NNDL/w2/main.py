@@ -7,7 +7,7 @@ Created on Sat Dec 23 23:56:45 2023
 
 #%%Set up
 import sys
-work_path = "C:/Users/serge/codez/24/NNDL/w2"
+work_path = ""
 sys.path.append(work_path)
 
 #%%
@@ -34,10 +34,6 @@ print ("y = " + str(train_set_y[:, index]) + ", it's a '" + classes[np.squeeze(t
 m_train = train_set_x_orig.shape[0]
 m_test = test_set_x_orig.shape[0]
 num_px = train_set_x_orig.shape[1]
-# YOUR CODE STARTS HERE
-
-
-# YOUR CODE ENDS HERE
 
 # print ("Number of training examples: m_train = " + str(m_train))
 # print ("Number of testing examples: m_test = " + str(m_test))
